@@ -1,0 +1,32 @@
+name: Void Comments
+slug: void-comments
+type: plugin
+version: 1.0.0
+description: Commenti condivisi con moderazione preventiva e storage flat-file isolato per sito.
+icon: comments
+author: { name: Void Labs }
+license: MIT
+compatibility: { grav: ['2.0'] }
+dependencies:
+  - { name: grav, version: '>=2.0.0' }
+  - api
+  - form
+  - email
+form:
+  validation: strict
+  fields:
+    enabled:
+      type: toggle
+      label: Stato plugin
+      default: 0
+      options: { 1: Abilitato, 0: Disabilitato }
+      validate: { type: bool }
+    moderator_to:
+      type: email
+      label: Email moderatore
+      help: Indirizzo che riceve le notifiche dei nuovi commenti. Se vuoto viene usata VOID_COMMENTS_MODERATOR_TO.
+      validate: { type: email }
+    moderator_subject:
+      type: text
+      label: Oggetto email moderazione
+      default: '[Blog] Nuovo commento da moderare'

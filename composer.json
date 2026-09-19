@@ -1,0 +1,32 @@
+{
+    "name": "voidlabs/grav-plugin-void-comments",
+    "type": "grav-plugin",
+    "description": "Shared flat-file comments for Grav 2 with moderation, replies and rate limiting.",
+    "keywords": ["grav", "plugin", "comments", "moderation"],
+    "homepage": "https://github.com/voidlabs/void-comments",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Void Labs",
+            "homepage": "https://github.com/voidlabs"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "ext-json": "*",
+        "ext-mbstring": "*"
+    },
+    "suggest": {
+        "getgrav/grav-plugin-api": "Required for the administration API.",
+        "getgrav/grav-plugin-form": "Required for the comment form and CAPTCHA integration.",
+        "getgrav/grav-plugin-email": "Required for moderator notifications."
+    },
+    "autoload": {
+        "psr-4": {
+            "VoidLabs\\Comments\\": "src/"
+        }
+    },
+    "scripts": {
+        "test": "@php tests/run.php"
+    }
+}
