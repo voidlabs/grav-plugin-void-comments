@@ -104,6 +104,27 @@ try {
     check_comments(!$limiter->consume('127.0.0.1', 'one@example.test', 1000), 'Quarto tentativo rate limit accettato.');
     check_comments($limiter->consume('127.0.0.1', 'one@example.test', 4600), 'Rate limit non scaduto dopo la finestra.');
 
+    $independentFile = $directory . '/independent-rate-limit.json';
+    $independent = new CommentRateLimiter($independentFile, 3600, 3);
+    check_comments($independent->consume('192.0.2.1', 'a@example.test', 1000), 'Primo tentativo per IP rifiutato.');
+    check_comments($independent->consume('192.0.2.1', 'b@example.test', 1000), 'La rotazione email non dovrebbe consumare la quota IP.');
+    check_comments($independent->consume('192.0.2.1', 'c@example.test', 1000), 'La terza richiesta dallo stesso IP è stata bloccata.');
+    check_comments(!$independent->consume('192.0.2.1', 'd@example.test', 1000), 'Cambiare email aggira il limite per IP.');
+    check_comments($independent->consume('192.0.2.2', 'same@example.test', 1000), 'Primo tentativo per email rifiutato.');
+    check_comments($independent->consume('192.0.2.3', 'same@example.test', 1000), 'La seconda richiesta per email è stata bloccata.');
+    check_comments($independent->consume('192.0.2.4', 'same@example.test', 1000), 'La terza richiesta per email è stata bloccata.');
+    check_comments(!$independent->consume('192.0.2.5', ' same@example.test ', 1000), 'Cambiare IP o spazi aggira il limite per email.');
+    $independentData = json_decode((string) file_get_contents($independentFile), true, 512, JSON_THROW_ON_ERROR);
+    check_comments(isset($independentData['ip:' . hash('sha256', '192.0.2.1')]) && isset($independentData['email:' . hash('sha256', 'a@example.test')]), 'I contatori indipendenti non sono persistiti con chiavi hashate.');
+
+    $legacyFile = $directory . '/legacy-rate-limit.json';
+    $legacyKey = hash('sha256', "192.0.2.4\0legacy@example.test");
+    file_put_contents($legacyFile, json_encode([$legacyKey => [1000, 1001, 1002]], JSON_THROW_ON_ERROR));
+    $legacyLimiter = new CommentRateLimiter($legacyFile, 3600, 3);
+    check_comments(!$legacyLimiter->consume('192.0.2.4', 'legacy@example.test', 1002), 'Il formato 0.1.x non conserva la quota attiva della coppia.');
+    file_put_contents($legacyFile, '{broken');
+    check_comments(!$legacyLimiter->consume('192.0.2.4', 'legacy@example.test', 1002), 'JSON corrotto disabilita il rate limit invece di aprirlo.');
+
     $oldRequest = CommentRequest::fromArray(
         ['route' => '/old', 'name' => 'Old', 'email' => 'old@example.test', 'message' => 'Old'],
         '/old',

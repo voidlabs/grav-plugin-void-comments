@@ -20,18 +20,32 @@ final class CommentRateLimiter
         }
         try {
             $raw = stream_get_contents($handle);
-            $data = $raw === false || $raw === '' ? [] : (json_decode($raw, true) ?: []);
-            $key = hash('sha256', strtolower(trim($address)) . "\0" . strtolower(trim($email)));
+            $data = $raw === '' ? [] : json_decode((string) $raw, true);
+            if (!is_array($data)) return false;
+            $address = strtolower(trim($address));
+            $email = strtolower(trim($email));
+            $legacyKey = hash('sha256', $address . "\0" . $email);
+            $keys = ['ip:' . hash('sha256', $address), 'email:' . hash('sha256', $email)];
             $threshold = $now - $this->window;
-            $attempts = array_values(array_filter((array) ($data[$key] ?? []), static fn($time): bool => is_int($time) && $time > $threshold));
-            if (count($attempts) >= $this->maximum) return false;
-            $attempts[] = $now;
-            $data[$key] = $attempts;
             foreach ($data as $candidate => $times) {
-                if (!array_filter((array) $times, static fn($time): bool => is_int($time) && $time > $threshold)) unset($data[$candidate]);
+                $data[$candidate] = array_values(array_filter(
+                    (array) $times,
+                    static fn($time): bool => is_int($time) && $time > $threshold
+                ));
+                if ($data[$candidate] === []) unset($data[$candidate]);
             }
-            rewind($handle); ftruncate($handle, 0); fwrite($handle, json_encode($data, JSON_THROW_ON_ERROR)); fflush($handle);
-            return true;
+            // Files created by 0.1.x used a hash of IP + email. Keep active
+            // entries for that exact pair effective while new requests use
+            // independent IP and email counters.
+            foreach ($keys as $key) {
+                if (count($data[$legacyKey] ?? []) + count($data[$key] ?? []) >= $this->maximum) return false;
+            }
+            foreach ($keys as $key) $data[$key][] = $now;
+            $json = json_encode($data, JSON_THROW_ON_ERROR);
+            rewind($handle);
+            return ftruncate($handle, 0)
+                && fwrite($handle, $json) === strlen($json)
+                && fflush($handle);
         } finally {
             flock($handle, LOCK_UN); fclose($handle);
         }

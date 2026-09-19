@@ -58,3 +58,10 @@ Submissions are validated against the current route and an allow-list of page
 templates. New comments are written to pending/, while the directory controls
 moderation state. Email addresses and rate-limit material are runtime data and
 must be protected according to the site's retention policy.
+
+The default comment limit is three submissions per hour for each IP address and
+each normalized email address. Both counters must allow a request, so changing
+only the IP or only the email does not bypass the limit. The rate-limit file is
+stored under the site's `user-data://void-comments/` directory and contains only
+SHA-256-derived keys and timestamps. Files written by version 0.1.x, which used
+an IP+email pair key, remain effective for that exact pair during the migration.

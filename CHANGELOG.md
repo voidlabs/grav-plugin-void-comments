@@ -1,3 +1,12 @@
+# 0.2.0
+## 2026-09-19
+
+* Rate limiting now tracks IP and email independently, preventing rotation of
+  either identity from bypassing the comment submission limit.
+* Existing 0.1.x pair-key entries remain effective for the exact pair while
+  new attempts are stored in the independent counter format.
+* Corrupted rate-limit JSON fails closed and short writes are rejected.
+
 # 0.1.0
 ## 2026-09-19
 

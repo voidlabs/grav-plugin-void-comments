@@ -1,7 +1,7 @@
 name: Void Comments
 slug: void-comments
 type: plugin
-version: 0.1.0
+version: 0.2.0
 description: Shared flat-file comments for Grav 2 with moderation, replies, rate limiting and CAPTCHA.
 icon: comments
 author:
