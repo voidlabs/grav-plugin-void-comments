@@ -3,6 +3,18 @@
 Shared flat-file comments for Grav 2 with moderation, replies, rate limiting,
 CAPTCHA and an Admin API panel.
 
+## Installation
+
+From the root of a Grav 2 installation:
+
+```sh
+bin/gpm install void-comments
+```
+
+The plugin requires the Grav `api`, `form` and `email` plugins. GPM will offer
+to install declared dependencies when the plugin is installed from the Grav
+repository.
+
 ## Development
 
 Install the development dependencies and run the isolated checks with:

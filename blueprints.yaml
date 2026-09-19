@@ -1,10 +1,15 @@
 name: Void Comments
 slug: void-comments
 type: plugin
-version: 1.0.0
-description: Commenti condivisi con moderazione preventiva e storage flat-file isolato per sito.
+version: 0.1.0
+description: Shared flat-file comments for Grav 2 with moderation, replies, rate limiting and CAPTCHA.
 icon: comments
-author: { name: Void Labs }
+author:
+  name: Void Labs
+  url: https://github.com/voidlabs
+homepage: https://github.com/voidlabs/grav-plugin-void-comments
+bugs: https://github.com/voidlabs/grav-plugin-void-comments/issues
+keywords: comments, moderation, replies, grav, plugin
 license: MIT
 compatibility: { grav: ['2.0'] }
 dependencies:
