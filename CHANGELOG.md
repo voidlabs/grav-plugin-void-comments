@@ -1,3 +1,12 @@
+# 0.3.0
+## 2026-09-22
+
+1. [](#new)
+   * Added pagination and route filtering to the Grav administration panel.
+   * Added direct links from approved comments to their public page.
+   * Added deterministic newest-first ordering and focus support for administrative comment lists.
+   * Expanded isolated coverage for pagination, filtering and legacy storage behavior.
+
 # 0.2.0
 ## 2026-09-19
 

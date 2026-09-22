@@ -28,9 +28,11 @@ final class CommentStore
 
     public function find(string $status, string $query = ''): array
     {
-        if ($query === '') return $this->records($status);
         $query = mb_strtolower(trim($query), 'UTF-8');
-        return array_values(array_filter($this->records($status), static function (array $record) use ($query): bool {
+        $records = array_values(array_filter($this->records($status), static function (array $record) use ($query): bool {
+            if ($query === '') {
+                return true;
+            }
             $haystack = mb_strtolower(implode("\n", [
                 (string) ($record['id'] ?? ''),
                 (string) ($record['route'] ?? ''),
@@ -40,6 +42,53 @@ final class CommentStore
             ]), 'UTF-8');
             return mb_strpos($haystack, $query, 0, 'UTF-8') !== false;
         }));
+        usort($records, static fn(array $a, array $b): int => [
+            (string) ($b['created_at'] ?? ''), (string) ($b['id'] ?? ''),
+        ] <=> [
+            (string) ($a['created_at'] ?? ''), (string) ($a['id'] ?? ''),
+        ]);
+        return $records;
+    }
+
+    /**
+     * Return an administrative page of comments, newest first.
+     *
+     * @return array{items:list<array<string,mixed>>, pagination:array{current:int,pages:int,total:int,per_page:int}}
+     */
+    public function page(
+        string $status,
+        string $query = '',
+        string $route = '',
+        int $page = 1,
+        int $perPage = 20,
+        ?string $focusId = null
+    ): array {
+        if (!in_array($status, ['pending', 'approved'], true)) {
+            throw new \InvalidArgumentException('Stato commento non valido.');
+        }
+        $route = trim($route);
+        $records = $this->find($status, $query);
+        if ($route !== '') {
+            $records = array_values(array_filter($records, static fn(array $record): bool => (string) ($record['route'] ?? '') === $route));
+        }
+
+        $perPage = min(100, max(1, $perPage));
+        $total = count($records);
+        $pages = max(1, (int) ceil($total / $perPage));
+        $page = min($pages, max(1, $page));
+        if ($focusId !== null && $focusId !== '') {
+            foreach ($records as $index => $record) {
+                if ((string) ($record['id'] ?? '') === $focusId) {
+                    $page = min($pages, (int) floor($index / $perPage) + 1);
+                    break;
+                }
+            }
+        }
+
+        return [
+            'items' => array_values(array_slice($records, ($page - 1) * $perPage, $perPage)),
+            'pagination' => ['current' => $page, 'pages' => $pages, 'total' => $total, 'per_page' => $perPage],
+        ];
     }
 
     public function approvedForRoute(string $route): array

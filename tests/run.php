@@ -115,6 +115,20 @@ try {
     check_comments($store->deleteApproved($reply['id']), 'Eliminazione dell’approvato fallita.');
     check_comments(!is_file($directory . '/approved/' . $reply['id'] . '.json'), 'Approvato eliminato ancora presente.');
 
+    $latestRequest = CommentRequest::fromArray(
+        ['route' => '/article', 'name' => 'Latest', 'email' => 'latest@example.test', 'message' => 'Latest'],
+        '/article',
+        'article',
+        ['article']
+    );
+    $latest = $store->addPending($latestRequest, '127.0.0.5', $secondTime->modify('+1 day'));
+    check_comments($store->approve($latest['id'], $secondTime->modify('+1 day')), 'Approvazione del commento più recente fallita.');
+    $articlePage = $store->page('approved', '', '/article', 1, 1);
+    check_comments($articlePage['pagination']['total'] === 2 && $articlePage['pagination']['pages'] === 2, 'Paginazione commenti o filtro per route errati.');
+    check_comments(($articlePage['items'][0]['id'] ?? '') === $latest['id'], 'Commenti amministrativi non ordinati dal più recente.');
+    $focusedPage = $store->page('approved', '', '/article', 1, 1, $parent['id']);
+    check_comments($focusedPage['pagination']['current'] === 2 && ($focusedPage['items'][0]['id'] ?? '') === $parent['id'], 'Focus amministrativo sul commento non porta alla pagina corretta.');
+
     $limiterFile = $directory . '/rate-limit.json';
     $limiter = new CommentRateLimiter($limiterFile);
     check_comments($limiter->consume('127.0.0.1', 'one@example.test', 1000), 'Primo tentativo rate limit rifiutato.');

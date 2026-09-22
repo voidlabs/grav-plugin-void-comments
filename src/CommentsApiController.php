@@ -17,8 +17,34 @@ final class CommentsApiController extends AbstractApiController
     public function index(ServerRequestInterface $request): ResponseInterface
     {
         $this->requirePermission($request, 'api.super');
-        $query = trim(mb_substr((string) ($request->getQueryParams()['q'] ?? ''), 0, 200));
-        return ApiResponse::create(['schema_version' => 1, 'query' => $query, 'comments' => $this->plugin()->pendingForAdmin($query), 'approved' => $this->plugin()->approvedForAdmin($query)]);
+        $params = $request->getQueryParams();
+        $query = trim(mb_substr((string) ($params['q'] ?? ''), 0, 200));
+        $route = trim(mb_substr((string) ($params['route'] ?? ''), 0, 500));
+        $page = max(1, (int) ($params['page'] ?? 1));
+        $perPage = min(100, max(1, (int) ($params['per_page'] ?? 20)));
+        $focus = trim((string) ($params['focus'] ?? ''));
+        $plugin = $this->plugin();
+        $pending = $plugin->pendingPageForAdmin($query, $route, $page, $perPage, $focus !== '' ? $focus : null);
+        $approved = $plugin->approvedPageForAdmin($query, $route, $page, $perPage, $focus !== '' ? $focus : null);
+        $decorate = static function (array $result) use ($plugin): array {
+            foreach ($result['items'] as &$comment) {
+                $comment['public_url'] = $plugin->publicCommentUrl($comment);
+            }
+            unset($comment);
+            return $result;
+        };
+        $pending = $decorate($pending);
+        $approved = $decorate($approved);
+        return ApiResponse::create([
+            'schema_version' => 2,
+            'query' => $query,
+            'route' => $route,
+            'page' => $page,
+            'per_page' => $perPage,
+            'comments' => $pending['items'],
+            'approved' => $approved['items'],
+            'pagination' => ['pending' => $pending['pagination'], 'approved' => $approved['pagination']],
+        ]);
     }
     public function approve(ServerRequestInterface $request): ResponseInterface { return $this->action($request, 'approve'); }
     public function delete(ServerRequestInterface $request): ResponseInterface { return $this->action($request, 'delete'); }

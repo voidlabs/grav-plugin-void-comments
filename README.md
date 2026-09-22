@@ -40,6 +40,16 @@ not set locally.
 Runtime data is stored under user-data://void-comments. It contains private
 moderation data and must remain outside version control and public releases.
 
+## Administration
+
+Users with the Grav `api.super` permission can open the Commenti panel from the
+Grav administration sidebar. The panel supports searching comments, filtering
+by page, pagination, editing, moderation and deletion. Approved comments also
+include a link to their public page.
+
+For that link to jump directly to a comment, the consuming theme should render
+each comment with an `id` such as `comment-{{ comment.id }}`.
+
 ## Theme contract
 
 The theme can use these Twig variables:

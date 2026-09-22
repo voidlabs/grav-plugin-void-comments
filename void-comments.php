@@ -71,6 +71,23 @@ final class VoidCommentsPlugin extends Plugin
 
     public function pendingForAdmin(string $query = ''): array { $store = $this->store(); $store->prune(); return $store->find('pending', $query); }
     public function approvedForAdmin(string $query = ''): array { return $this->store()->find('approved', $query); }
+    public function pendingPageForAdmin(string $query = '', string $route = '', int $page = 1, int $perPage = 20, ?string $focusId = null): array
+    {
+        $store = $this->store();
+        $store->prune();
+        return $store->page('pending', $query, $route, $page, $perPage, $focusId);
+    }
+    public function approvedPageForAdmin(string $query = '', string $route = '', int $page = 1, int $perPage = 20, ?string $focusId = null): array
+    {
+        return $this->store()->page('approved', $query, $route, $page, $perPage, $focusId);
+    }
+    public function publicCommentUrl(array $comment): string
+    {
+        $base = rtrim((string) ($this->grav['base_url_relative'] ?? $this->grav['base_url'] ?? ''), '/');
+        $route = '/' . ltrim((string) ($comment['route'] ?? ''), '/');
+        $id = rawurlencode((string) ($comment['id'] ?? ''));
+        return $base . $route . ($id === '' ? '' : '#comment-' . $id);
+    }
     public function approveComment(string $id): bool { return $this->store()->approve($id); }
     public function deletePendingComment(string $id): bool { return $this->store()->deletePending($id); }
     public function deleteApprovedComment(string $id): bool { return $this->store()->deleteApproved($id); }
