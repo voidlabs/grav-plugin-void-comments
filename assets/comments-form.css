@@ -1,0 +1,13 @@
+#void-comments-form .void-comments-captcha-error {
+    margin: .75rem 0;
+    padding: .75rem 1rem;
+    border: 1px solid #b42318;
+    border-radius: .25rem;
+    background: #fef3f2;
+    color: #912018;
+    font-weight: 600;
+}
+
+#void-comments-form .void-comments-captcha-error[hidden] {
+    display: none;
+}

@@ -1,3 +1,10 @@
+# 0.4.2
+## 2026-09-23
+
+1. [](#bugfix)
+   * Prevented comment submission when the Cap human verification has not been completed.
+   * Added a visible inline CAPTCHA error and automatic scrolling to the comment form when validation errors are present.
+
 # 0.4.1
 ## 2026-09-23
 
