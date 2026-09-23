@@ -84,7 +84,7 @@ final class VoidCommentsPlugin extends Plugin
     }
     public function publicCommentUrl(array $comment): string
     {
-        $base = rtrim((string) ($this->grav['base_url_relative'] ?? $this->grav['base_url'] ?? ''), '/');
+        $base = rtrim((string) ($this->grav['base_url_absolute'] ?? $this->grav['base_url'] ?? $this->grav['base_url_relative'] ?? ''), '/');
         $route = '/' . ltrim((string) ($comment['route'] ?? ''), '/');
         $id = rawurlencode((string) ($comment['id'] ?? ''));
         return $base . $route . ($id === '' ? '' : '#comment-' . $id);
@@ -112,7 +112,7 @@ final class VoidCommentsPlugin extends Plugin
                 'name' => ['type' => 'text', 'label' => 'Nome', 'outerclasses' => (string) ($fieldClasses['name'] ?? ''), 'autocomplete' => 'name', 'validate' => ['required' => true, 'max' => 120]],
                 'email' => ['type' => 'email', 'label' => 'Email (non sarà pubblicata)', 'outerclasses' => (string) ($fieldClasses['email'] ?? ''), 'autocomplete' => 'email', 'validate' => ['required' => true, 'type' => 'email']],
                 'message' => ['type' => 'textarea', 'label' => 'Commento', 'rows' => 7, 'validate' => ['required' => true, 'max' => 5000]],
-                'captcha' => ['type' => 'captcha', 'provider' => 'cap', 'mode' => 'checkbox', 'captcha_not_validated' => 'Completa la verifica anti-spam prima di inviare il commento.'],
+                'captcha' => ['type' => 'captcha', 'provider' => 'cap', 'mode' => 'checkbox', 'captcha_not_validated' => 'Completa la verifica anti-spam prima di inviare il commento.', 'validate' => ['required' => true]],
                 'website' => ['type' => 'honeypot'],
             ],
             'buttons' => ['submit' => ['type' => 'submit', 'value' => 'Invia il commento']],

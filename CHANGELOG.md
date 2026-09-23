@@ -1,3 +1,10 @@
+# 0.4.1
+## 2026-09-23
+
+1. [](#bugfix)
+   * Fixed public notification links to use absolute URLs when available.
+   * Made the human-verification CAPTCHA required so invalid submissions stay on the comment form with a validation error.
+
 # 0.4.0
 ## 2026-09-23
 
