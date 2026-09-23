@@ -1,3 +1,18 @@
 enabled: false
 templates: []
 moderator_subject: '[Blog] Nuovo commento da moderare'
+moderator_body: |
+  Nuovo commento in moderazione
+
+  Pagina: {route}
+  Autore: {author}
+  Email: {email}
+  ID: {id}
+
+  {body}
+
+  Apri il commento in moderazione:
+  {moderation_url}
+
+  Vedi la pagina pubblica:
+  {public_url}

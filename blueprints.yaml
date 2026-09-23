@@ -1,7 +1,7 @@
 name: Void Comments
 slug: void-comments
 type: plugin
-version: 0.3.0
+version: 0.4.0
 description: Shared flat-file comments for Grav 2 with moderation, replies, rate limiting and CAPTCHA.
 icon: comments
 author:
@@ -35,3 +35,8 @@ form:
       type: text
       label: Oggetto email moderazione
       default: '[Blog] Nuovo commento da moderare'
+    moderator_body:
+      type: textarea
+      label: Corpo email moderazione
+      help: 'Testo della notifica. Placeholder disponibili: {route}, {author}, {email}, {id}, {body}, {moderation_url}, {public_url}.'
+      default: "Nuovo commento in moderazione\n\nPagina: {route}\nAutore: {author}\nEmail: {email}\nID: {id}\n\n{body}\n\nApri il commento in moderazione:\n{moderation_url}\n\nVedi la pagina pubblica:\n{public_url}"

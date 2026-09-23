@@ -34,8 +34,14 @@ composer test
 
 Configure the plugin in the site's own Grav configuration, not in this
 repository. At minimum configure enabled, templates and moderator_subject.
+The notification body can be customized with `moderator_body`; if it is
+omitted, the plugin uses its default message.
 Use VOID_COMMENTS_MODERATOR_TO for the moderator address when moderator_to is
 not set locally.
+
+The notification body is plain text and supports these placeholders:
+`{route}`, `{author}`, `{email}`, `{id}`, `{body}`, `{moderation_url}` and
+`{public_url}`.
 
 Runtime data is stored under user-data://void-comments. It contains private
 moderation data and must remain outside version control and public releases.

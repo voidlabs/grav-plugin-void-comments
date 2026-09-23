@@ -11,6 +11,7 @@ use RocketTheme\Toolbox\Event\Event;
 require_once __DIR__ . '/src/CommentRequest.php';
 require_once __DIR__ . '/src/CommentRateLimiter.php';
 require_once __DIR__ . '/src/CommentStore.php';
+require_once __DIR__ . '/src/NotificationTemplate.php';
 
 final class VoidCommentsPlugin extends Plugin
 {
@@ -88,6 +89,11 @@ final class VoidCommentsPlugin extends Plugin
         $id = rawurlencode((string) ($comment['id'] ?? ''));
         return $base . $route . ($id === '' ? '' : '#comment-' . $id);
     }
+    public function adminCommentUrl(array $comment): string
+    {
+        $base = rtrim((string) ($this->grav['base_url_absolute'] ?? $this->grav['base_url'] ?? ''), '/');
+        return $base . '/admin/plugin/void-comments?route=' . rawurlencode((string) ($comment['route'] ?? '')) . '&focus=' . rawurlencode((string) ($comment['id'] ?? ''));
+    }
     public function approveComment(string $id): bool { return $this->store()->approve($id); }
     public function deletePendingComment(string $id): bool { return $this->store()->deletePending($id); }
     public function deleteApprovedComment(string $id): bool { return $this->store()->deleteApproved($id); }
@@ -158,7 +164,16 @@ final class VoidCommentsPlugin extends Plugin
             $this->grav['log']->notice('Void Comments pending; moderator email is not configured.'); return;
         }
         try {
-            $body = "Nuovo commento in moderazione\n\nPagina: {$record['route']}\nAutore: {$record['author']}\nEmail: {$record['email']}\nID: {$record['id']}\n\n{$record['body']}";
+            $template = (string) $this->config->get('plugins.void-comments.moderator_body', \VoidLabs\Comments\NotificationTemplate::DEFAULT_BODY);
+            $body = \VoidLabs\Comments\NotificationTemplate::render($template, [
+                'route' => (string) ($record['route'] ?? ''),
+                'author' => (string) ($record['author'] ?? ''),
+                'email' => (string) ($record['email'] ?? ''),
+                'id' => (string) ($record['id'] ?? ''),
+                'body' => (string) ($record['body'] ?? ''),
+                'moderation_url' => $this->adminCommentUrl($record),
+                'public_url' => $this->publicCommentUrl($record),
+            ]);
             $message = $this->grav['Email']->buildMessage(['to' => $recipient, 'reply_to' => $record['email'], 'subject' => (string) $this->config->get('plugins.void-comments.moderator_subject', '[Blog] Nuovo commento da moderare'), 'body' => $body, 'content_type' => 'text/plain']);
             if ($this->grav['Email']->send($message) < 1) $this->grav['log']->warning('Comment moderation email was not sent.');
         } catch (\Throwable $exception) { $this->grav['log']->warning('Comment moderation email failed (' . $exception::class . ').'); }

@@ -5,13 +5,24 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/src/CommentRequest.php';
 require_once dirname(__DIR__) . '/src/CommentRateLimiter.php';
 require_once dirname(__DIR__) . '/src/CommentStore.php';
+require_once dirname(__DIR__) . '/src/NotificationTemplate.php';
 
 use VoidLabs\Comments\CommentRateLimiter;
 use VoidLabs\Comments\CommentRequest;
 use VoidLabs\Comments\CommentStore;
+use VoidLabs\Comments\NotificationTemplate;
 
 $checks = 0;
 $failures = [];
+
+$renderedNotification = NotificationTemplate::render('Commento {id}: {body} ({moderation_url})', [
+    'id' => 'abc123', 'body' => 'Testo', 'moderation_url' => 'https://example.test/modera',
+]);
+check_comments($renderedNotification === 'Commento abc123: Testo (https://example.test/modera)', 'Placeholder della notifica non sostituiti.');
+check_comments(NotificationTemplate::render(NotificationTemplate::DEFAULT_BODY, [
+    'route' => '/articolo', 'author' => 'Mario', 'email' => 'mario@example.test', 'id' => 'abc123',
+    'body' => 'Testo', 'moderation_url' => 'https://example.test/modera', 'public_url' => 'https://example.test/articolo#comment-abc123',
+]) === "Nuovo commento in moderazione\n\nPagina: /articolo\nAutore: Mario\nEmail: mario@example.test\nID: abc123\n\nTesto\n\nApri il commento in moderazione:\nhttps://example.test/modera\n\nVedi la pagina pubblica:\nhttps://example.test/articolo#comment-abc123", 'Template predefinito della notifica modificato inaspettatamente.');
 
 function check_comments(bool $condition, string $message): void
 {
