@@ -1,3 +1,12 @@
+# 0.4.3-dev
+
+- Serialize moderation, deletion and retention with a stable storage lock.
+- Write complete JSON to unique temporary files before atomic replacement; keep previous data on failure.
+- Preserve published edits when recovering an interrupted approval and prevent deleted comments from resurfacing.
+- Keep rate-limit counters intact on interrupted writes; reject empty or damaged existing files.
+- Register daily comment retention with the Grav scheduler and support a non-mutating pruning preview.
+- Add multiprocess and storage-failure regression tests.
+
 # 0.4.2
 ## 2026-09-23
 

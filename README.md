@@ -81,3 +81,27 @@ only the IP or only the email does not bypass the limit. The rate-limit file is
 stored under the site's `user-data://void-comments/` directory and contains only
 SHA-256-derived keys and timestamps. Files written by version 0.1.x, which used
 an IP+email pair key, remain effective for that exact pair during the migration.
+
+## Storage and retention
+
+Moderation operations use a stable `.storage.lock` file. Rate limits use a
+separate lock beside the JSON counters. Do not remove these locks while PHP
+workers are running. Writes use unique temporary files, check complete writes
+and flush before replacing JSON. Use local storage with working `flock` and
+atomic rename semantics; distributed filesystems need separate validation.
+
+The approved file is the commit point for approval. Retrying an interrupted
+approval removes stale pending data without replacing subsequent approved edits.
+Readers suppress the stale pending copy. Deleting an approved comment also
+removes any pending copy left by an interrupted approval.
+
+The `void-comments-retention` scheduler job runs daily at 03:20 in Grav's
+scheduler timezone. Configure the host to invoke Grav's scheduler regularly;
+registering the job alone does not install an operating-system cron task.
+It uses the existing policy: technical metadata expires after 7 days and
+pending comments after 90 days. Approved comments have no automatic expiry.
+`CommentStore::prune($now, true)` previews removals without changing records.
+The same storage lock serializes retention and moderation.
+
+`composer test` includes worker-process concurrency, short-write, failed-write,
+approval-recovery and retention-preview checks. No site records are required.

@@ -38,7 +38,7 @@ function remove_tree(string $directory): void
     if (!is_dir($directory)) {
         return;
     }
-    foreach (glob($directory . '/*') ?: [] as $path) {
+    foreach (array_merge(glob($directory . '/*') ?: [], glob($directory . '/.[!.]*') ?: []) as $path) {
         if (is_dir($path)) {
             remove_tree($path);
         } else {
@@ -110,7 +110,7 @@ try {
     $thread = $store->approvedForRoute('/article');
     check_comments(count($thread) === 2, 'Thread incompleto.');
     check_comments(($thread[1]['parent_id'] ?? '') === $parent['id'], 'Parent id non conservato.');
-    check_comments(($thread[1]['depth'] ?? null) === 1, 'Profondità del thread errata.');
+    check_comments(($thread[1]['depth'] ?? null) === 1, 'ProfonditÃ  del thread errata.');
     check_comments($store->approvedParentForRoute($parent['id'], '/article') !== null, 'Padre approvato non trovato.');
     check_comments($store->approvedParentForRoute($parent['id'], '/other') === null, 'Padre accettato su route diversa.');
     check_comments(count($store->approved()) === 2, 'Elenco dei commenti approvati per l amministrazione incompleto.');
@@ -123,7 +123,7 @@ try {
     $deletable = $store->addPending($request, '127.0.0.3', $secondTime);
     check_comments($store->deletePending($deletable['id']), 'Eliminazione del pending fallita.');
     check_comments(!is_file($directory . '/pending/' . $deletable['id'] . '.json'), 'Pending eliminato ancora presente.');
-    check_comments($store->deleteApproved($reply['id']), 'Eliminazione dell’approvato fallita.');
+    check_comments($store->deleteApproved($reply['id']), 'Eliminazione dellâ€™approvato fallita.');
     check_comments(!is_file($directory . '/approved/' . $reply['id'] . '.json'), 'Approvato eliminato ancora presente.');
 
     $latestRequest = CommentRequest::fromArray(
@@ -133,10 +133,10 @@ try {
         ['article']
     );
     $latest = $store->addPending($latestRequest, '127.0.0.5', $secondTime->modify('+1 day'));
-    check_comments($store->approve($latest['id'], $secondTime->modify('+1 day')), 'Approvazione del commento più recente fallita.');
+    check_comments($store->approve($latest['id'], $secondTime->modify('+1 day')), 'Approvazione del commento piÃ¹ recente fallita.');
     $articlePage = $store->page('approved', '', '/article', 1, 1);
     check_comments($articlePage['pagination']['total'] === 2 && $articlePage['pagination']['pages'] === 2, 'Paginazione commenti o filtro per route errati.');
-    check_comments(($articlePage['items'][0]['id'] ?? '') === $latest['id'], 'Commenti amministrativi non ordinati dal più recente.');
+    check_comments(($articlePage['items'][0]['id'] ?? '') === $latest['id'], 'Commenti amministrativi non ordinati dal piÃ¹ recente.');
     $focusedPage = $store->page('approved', '', '/article', 1, 1, $parent['id']);
     check_comments($focusedPage['pagination']['current'] === 2 && ($focusedPage['items'][0]['id'] ?? '') === $parent['id'], 'Focus amministrativo sul commento non porta alla pagina corretta.');
 
@@ -152,11 +152,11 @@ try {
     $independent = new CommentRateLimiter($independentFile, 3600, 3);
     check_comments($independent->consume('192.0.2.1', 'a@example.test', 1000), 'Primo tentativo per IP accettato.');
     check_comments($independent->consume('192.0.2.1', 'b@example.test', 1000), 'La rotazione email non dovrebbe consumare la quota IP.');
-    check_comments($independent->consume('192.0.2.1', 'c@example.test', 1000), 'La terza richiesta dallo stesso IP è stata accettata.');
+    check_comments($independent->consume('192.0.2.1', 'c@example.test', 1000), 'La terza richiesta dallo stesso IP Ã¨ stata accettata.');
     check_comments(!$independent->consume('192.0.2.1', 'd@example.test', 1000), 'Cambiare email aggira il limite per IP.');
     check_comments($independent->consume('192.0.2.2', 'same@example.test', 1000), 'Primo tentativo per email accettato.');
-    check_comments($independent->consume('192.0.2.3', 'same@example.test', 1000), 'La seconda richiesta per email è stata accettata.');
-    check_comments($independent->consume('192.0.2.4', 'same@example.test', 1000), 'La terza richiesta per email è stata accettata.');
+    check_comments($independent->consume('192.0.2.3', 'same@example.test', 1000), 'La seconda richiesta per email Ã¨ stata accettata.');
+    check_comments($independent->consume('192.0.2.4', 'same@example.test', 1000), 'La terza richiesta per email Ã¨ stata accettata.');
     check_comments(!$independent->consume('192.0.2.5', ' same@example.test ', 1000), 'Cambiare IP o spazi aggira il limite per email.');
     $independentData = json_decode((string) file_get_contents($independentFile), true, 512, JSON_THROW_ON_ERROR);
     check_comments(isset($independentData['ip:' . hash('sha256', '192.0.2.1')]) && isset($independentData['email:' . hash('sha256', 'a@example.test')]), 'I contatori indipendenti non sono persistiti con chiavi hashate.');

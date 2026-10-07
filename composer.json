@@ -2,7 +2,12 @@
     "name": "voidlabs/grav-plugin-void-comments",
     "type": "grav-plugin",
     "description": "Shared flat-file comments for Grav 2 with moderation, replies and rate limiting.",
-    "keywords": ["grav", "plugin", "comments", "moderation"],
+    "keywords": [
+        "grav",
+        "plugin",
+        "comments",
+        "moderation"
+    ],
     "homepage": "https://github.com/voidlabs/grav-plugin-void-comments",
     "license": "MIT",
     "authors": [
@@ -27,6 +32,9 @@
         }
     },
     "scripts": {
-        "test": "@php tests/run.php"
+        "test": [
+            "@php tests/run.php",
+            "@php tests/storage.php"
+        ]
     }
 }
