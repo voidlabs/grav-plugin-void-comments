@@ -118,7 +118,7 @@ final class VoidCommentsPlugin extends Plugin
             'fields' => [
                 'route' => ['type' => 'hidden', 'default' => $route], 'parent_id' => ['type' => 'hidden', 'default' => $this->replyTarget($route)['id'] ?? ''],
                 'name' => ['type' => 'text', 'label' => 'Nome', 'outerclasses' => (string) ($fieldClasses['name'] ?? ''), 'autocomplete' => 'name', 'validate' => ['required' => true, 'max' => 120]],
-                'email' => ['type' => 'email', 'label' => 'Email (non sarÃ  pubblicata)', 'outerclasses' => (string) ($fieldClasses['email'] ?? ''), 'autocomplete' => 'email', 'validate' => ['required' => true, 'type' => 'email']],
+                'email' => ['type' => 'email', 'label' => 'Email (non sarà pubblicata)', 'outerclasses' => (string) ($fieldClasses['email'] ?? ''), 'autocomplete' => 'email', 'validate' => ['required' => true, 'type' => 'email']],
                 'message' => ['type' => 'textarea', 'label' => 'Commento', 'rows' => 7, 'validate' => ['required' => true, 'max' => 5000]],
                 'captcha' => ['type' => 'captcha', 'provider' => 'cap', 'mode' => 'checkbox', 'captcha_not_validated' => 'Completa la verifica anti-spam prima di inviare il commento.', 'validate' => ['required' => true]],
                 'website' => ['type' => 'honeypot'],
@@ -142,16 +142,16 @@ final class VoidCommentsPlugin extends Plugin
         } catch (\InvalidArgumentException $exception) { $form->setError($exception->getMessage()); return; }
         $store = $this->store();
         if ($request->parentId !== null && $store->approvedParentForRoute($request->parentId, $request->route) === null) {
-            $form->setError('Il commento a cui stai rispondendo non Ã¨ disponibile.'); return;
+            $form->setError('Il commento a cui stai rispondendo non è disponibile.'); return;
         }
         $address = (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown'); $directory = $this->storageDirectory();
         if (!(new \VoidLabs\Comments\CommentRateLimiter($directory . '/rate-limit.json'))->consume($address, $request->email)) {
-            $form->setError('Sono stati inviati troppi commenti. Riprova piÃ¹ tardi.'); return;
+            $form->setError('Sono stati inviati troppi commenti. Riprova più tardi.'); return;
         }
         try { $store->prune(); $record = $store->addPending($request, $address); }
-        catch (\Throwable $exception) { $this->grav['log']->error('Comment persistence failed (' . $exception::class . ').'); $form->setError('Il commento non Ã¨ stato salvato. Riprova piÃ¹ tardi.'); return; }
+        catch (\Throwable $exception) { $this->grav['log']->error('Comment persistence failed (' . $exception::class . ').'); $form->setError('Il commento non è stato salvato. Riprova più tardi.'); return; }
         $this->notifyModerator($record);
-        $this->grav['messages']->add('Grazie. Il commento Ã¨ stato ricevuto e sarÃ  pubblicato dopo la moderazione.', 'success');
+        $this->grav['messages']->add('Grazie. Il commento è stato ricevuto e sarà pubblicato dopo la moderazione.', 'success');
         $anchor = trim((string) $this->config->get('plugins.void-comments.success_anchor', 'commenti'), "#/ ");
         $this->grav->redirect($request->route . ($anchor === '' ? '' : '#' . $anchor));
     }
