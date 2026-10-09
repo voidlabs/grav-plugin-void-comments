@@ -1,6 +1,7 @@
 # 0.4.3-dev
 
 - Serialize moderation, deletion and retention with a stable storage lock.
+- Remove hidden pending residues of interrupted approvals during retention, including dry-run reporting.
 - Write complete JSON to unique temporary files before atomic replacement; keep previous data on failure.
 - Preserve published edits when recovering an interrupted approval and prevent deleted comments from resurfacing.
 - Keep rate-limit counters intact on interrupted writes; reject empty or damaged existing files.

@@ -230,8 +230,13 @@ final class CommentStore
     {
         $now ??= new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
         $result = ['technical_removed' => 0, 'pending_deleted' => 0];
-        foreach ($this->records('pending') as $record) {
+        foreach ($this->recordsLocked('pending', true) as $record) {
             $id = (string) ($record['id'] ?? '');
+            // Readers hide these records; retention must still remove their private data.
+            if ($this->read('approved', $id) !== null) {
+                if ($dryRun || $this->deletePendingLocked($id)) ++$result['pending_deleted'];
+                continue;
+            }
             $created = \DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, (string) ($record['created_at'] ?? ''));
             if ($created && $created <= $now->modify('-90 days')) {
                 if ($dryRun || $this->deletePending($id)) ++$result['pending_deleted'];
@@ -250,14 +255,14 @@ final class CommentStore
         return $this->transaction(fn() => $this->recordsLocked($status));
     }
 
-    private function recordsLocked(string $status): array
+    private function recordsLocked(string $status, bool $includeSuperseded = false): array
     {
         $directory = $this->directory . '/' . $status;
         if (!is_dir($directory)) return [];
         $records = [];
         foreach (glob($directory . '/*.json') ?: [] as $filename) {
             // Publishing the approved file is the commit point, even after a crash.
-            if ($status === 'pending' && is_file($this->directory . '/approved/' . basename($filename))) continue;
+            if (!$includeSuperseded && $status === 'pending' && is_file($this->directory . '/approved/' . basename($filename))) continue;
             $record = json_decode((string) file_get_contents($filename), true);
             if (is_array($record)) {
                 // La directory e' l'unica fonte dello stato. I record legacy

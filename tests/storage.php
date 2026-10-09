@@ -89,6 +89,18 @@ try {
     $workers = [$spawn('body', $dir, $record['id']), $spawn('prune', $dir, $record['id'])];
     array_map($join, $workers);
     $assert($store->pending() === [], 'Concurrent edit resurrected expired comment.');
+    // Retention must see hidden pending copies left by an interrupted approval.
+    $residue = $store->addPending($request, '127.0.0.1');
+    $published = $residue; unset($published['technical']);
+    $published['body'] = 'Keep the published version';
+    AtomicJson::write($dir . '/approved/' . $residue['id'] . '.json', $published);
+    $pendingFile = $dir . '/pending/' . $residue['id'] . '.json';
+    $preview = $store->prune(null, true);
+    $assert($preview['pending_deleted'] === 1 && is_file($pendingFile), 'Preview missed hidden approval residue or modified it.');
+    $pruned = $store->prune();
+    $assert($pruned['pending_deleted'] === 1 && !is_file($pendingFile), 'Retention left hidden pending data indefinitely.');
+    $assert($store->approved()[0] === $published, 'Residue cleanup changed the approved record.');
+
     echo "OK: {$checks} storage checks, including 20 worker processes.\n";
 } finally {
     $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);

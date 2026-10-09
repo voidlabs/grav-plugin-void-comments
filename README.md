@@ -92,7 +92,8 @@ atomic rename semantics; distributed filesystems need separate validation.
 
 The approved file is the commit point for approval. Retrying an interrupted
 approval removes stale pending data without replacing subsequent approved edits.
-Readers suppress the stale pending copy. Deleting an approved comment also
+Readers suppress the stale pending copy; retention removes it without changing
+the approved record, and includes the cleanup in pruning previews. Deleting an approved comment also
 removes any pending copy left by an interrupted approval.
 
 The `void-comments-retention` scheduler job runs daily at 03:20 in Grav's
