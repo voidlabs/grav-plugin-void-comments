@@ -1,4 +1,5 @@
-# 0.4.3-dev
+# 0.4.3
+## 2026-10-09
 
 - Serialize moderation, deletion and retention with a stable storage lock.
 - Remove hidden pending residues of interrupted approvals during retention, including dry-run reporting.
