@@ -18,12 +18,18 @@ final class VoidCommentsPlugin extends Plugin
     public static function getSubscribedEvents(): array
     {
         return [
+            'onSchedulerInitialized' => ['onSchedulerInitialized', 0],
             'onFormPageHeaderProcessed' => ['onFormPageHeaderProcessed', 10],
             'onFormProcessed' => ['onFormProcessed', 10],
             'onTwigSiteVariables' => ['onTwigSiteVariables', 0],
             'onApiRegisterRoutes' => ['onApiRegisterRoutes', 0],
             'onApiSidebarItems' => ['onApiSidebarItems', 0],
         ];
+    }
+
+    public function onSchedulerInitialized(Event $event): void
+    {
+        $event['scheduler']->addFunction(fn() => $this->store()->prune(), [], 'void-comments-retention')->daily(3, 20);
     }
 
     public function autoload(): ClassLoader

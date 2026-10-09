@@ -38,7 +38,7 @@ function remove_tree(string $directory): void
     if (!is_dir($directory)) {
         return;
     }
-    foreach (glob($directory . '/*') ?: [] as $path) {
+    foreach (array_merge(glob($directory . '/*') ?: [], glob($directory . '/.[!.]*') ?: []) as $path) {
         if (is_dir($path)) {
             remove_tree($path);
         } else {

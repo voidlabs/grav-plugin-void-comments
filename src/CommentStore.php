@@ -4,11 +4,29 @@ declare(strict_types=1);
 
 namespace VoidLabs\Comments;
 
+require_once __DIR__ . '/AtomicJson.php';
+
 final class CommentStore
 {
+    private bool $locked = false;
+
+    private function transaction(callable $operation): mixed
+    {
+        if ($this->locked) return $operation();
+        return AtomicJson::locked($this->directory . '/.storage.lock', function () use ($operation) {
+            $this->locked = true;
+            try { return $operation(); } finally { $this->locked = false; }
+        });
+    }
+
     public function __construct(private readonly string $directory) {}
 
     public function addPending(CommentRequest $request, string $address, ?\DateTimeImmutable $now = null): array
+    {
+        return $this->transaction(fn() => $this->addPendingLocked($request, $address, $now));
+    }
+
+    private function addPendingLocked(CommentRequest $request, string $address, ?\DateTimeImmutable $now = null): array
     {
         $now ??= new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
         $id = bin2hex(random_bytes(16));
@@ -126,11 +144,18 @@ final class CommentStore
 
     public function approve(string $id, ?\DateTimeImmutable $now = null): bool
     {
+        return $this->transaction(fn() => $this->approveLocked($id, $now));
+    }
+
+    private function approveLocked(string $id, ?\DateTimeImmutable $now = null): bool
+    {
         $record = $this->read('pending', $id);
         if ($record === null) return false;
         $now ??= new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
         $record['moderated_at'] = $now->format(\DateTimeInterface::ATOM); unset($record['technical']);
-        $this->write('approved', $id, $record);
+        // Recover a previous approval interrupted after publishing the approved record.
+        // Never overwrite subsequent moderator edits with the stale pending copy.
+        if ($this->read('approved', $id) === null) $this->write('approved', $id, $record);
         $source = $this->filename('pending', $id);
         if (is_file($source) && !unlink($source)) throw new \RuntimeException('Impossibile rimuovere il commento pending.');
         return true;
@@ -138,20 +163,38 @@ final class CommentStore
 
     public function deletePending(string $id): bool
     {
+        return $this->transaction(fn() => $this->deletePendingLocked($id));
+    }
+
+    private function deletePendingLocked(string $id): bool
+    {
         $filename = $this->filename('pending', $id);
         return is_file($filename) && unlink($filename);
     }
 
     public function deleteApproved(string $id): bool
     {
+        return $this->transaction(fn() => $this->deleteApprovedLocked($id));
+    }
+
+    private function deleteApprovedLocked(string $id): bool
+    {
         $filename = $this->filename('approved', $id);
+        $pending = $this->filename('pending', $id);
+        if (is_file($filename) && is_file($pending) && !unlink($pending)) throw new \RuntimeException('Cannot remove interrupted approval.');
         return is_file($filename) && unlink($filename);
     }
 
     public function update(string $status, string $id, array $changes): bool
     {
+        return $this->transaction(fn() => $this->updateLocked($status, $id, $changes));
+    }
+
+    private function updateLocked(string $status, string $id, array $changes): bool
+    {
         if (!in_array($status, ['pending', 'approved'], true)) throw new \InvalidArgumentException('Stato commento non valido.');
         $record = $this->read($status, $id);
+        if ($status === 'pending' && is_file($this->filename('approved', $id))) return false;
         if ($record === null) return false;
         if (array_key_exists('author', $changes)) {
             $author = trim((string) $changes['author']);
@@ -178,20 +221,30 @@ final class CommentStore
         return true;
     }
 
-    public function prune(?\DateTimeImmutable $now = null): array
+    public function prune(?\DateTimeImmutable $now = null, bool $dryRun = false): array
+    {
+        return $this->transaction(fn() => $this->pruneLocked($now, $dryRun));
+    }
+
+    private function pruneLocked(?\DateTimeImmutable $now = null, bool $dryRun = false): array
     {
         $now ??= new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
         $result = ['technical_removed' => 0, 'pending_deleted' => 0];
-        foreach ($this->records('pending') as $record) {
+        foreach ($this->recordsLocked('pending', true) as $record) {
             $id = (string) ($record['id'] ?? '');
+            // Readers hide these records; retention must still remove their private data.
+            if ($this->read('approved', $id) !== null) {
+                if ($dryRun || $this->deletePendingLocked($id)) ++$result['pending_deleted'];
+                continue;
+            }
             $created = \DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, (string) ($record['created_at'] ?? ''));
             if ($created && $created <= $now->modify('-90 days')) {
-                if ($this->deletePending($id)) ++$result['pending_deleted'];
+                if ($dryRun || $this->deletePending($id)) ++$result['pending_deleted'];
                 continue;
             }
             $expires = \DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, (string) ($record['technical']['expires_at'] ?? ''));
             if (isset($record['technical']) && $expires && $expires <= $now) {
-                unset($record['technical']); $this->write('pending', $id, $record); ++$result['technical_removed'];
+                unset($record['technical']); if (!$dryRun) $this->write('pending', $id, $record); ++$result['technical_removed'];
             }
         }
         return $result;
@@ -199,10 +252,17 @@ final class CommentStore
 
     private function records(string $status): array
     {
+        return $this->transaction(fn() => $this->recordsLocked($status));
+    }
+
+    private function recordsLocked(string $status, bool $includeSuperseded = false): array
+    {
         $directory = $this->directory . '/' . $status;
         if (!is_dir($directory)) return [];
         $records = [];
         foreach (glob($directory . '/*.json') ?: [] as $filename) {
+            // Publishing the approved file is the commit point, even after a crash.
+            if (!$includeSuperseded && $status === 'pending' && is_file($this->directory . '/approved/' . basename($filename))) continue;
             $record = json_decode((string) file_get_contents($filename), true);
             if (is_array($record)) {
                 // La directory e' l'unica fonte dello stato. I record legacy
@@ -230,11 +290,7 @@ final class CommentStore
         unset($record['status']);
         $directory = $this->directory . '/' . $status;
         if (!is_dir($directory) && !mkdir($directory, 0770, true) && !is_dir($directory)) throw new \RuntimeException('Impossibile creare lo storage dei commenti.');
-        $target = $this->filename($status, $id); $temporary = $target . '.tmp-' . bin2hex(random_bytes(4));
-        $json = json_encode($record, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n";
-        if (file_put_contents($temporary, $json, LOCK_EX) === false || !rename($temporary, $target)) {
-            @unlink($temporary); throw new \RuntimeException('Impossibile aggiornare il commento.');
-        }
+        AtomicJson::write($this->filename($status, $id), $record);
     }
 
     private function filename(string $status, string $id): string
