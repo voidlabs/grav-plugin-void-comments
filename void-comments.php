@@ -114,7 +114,7 @@ final class VoidCommentsPlugin extends Plugin
         $route = (string) $page->route();
         $fieldClasses = (array) $this->config->get('plugins.void-comments.field_outerclasses', []);
         $header->form = [
-            'name' => 'void-comment', 'id' => 'void-comments-form', 'action' => $route, 'keep_alive' => true,
+            'name' => 'void-comment', 'id' => 'void-comments-form', 'action' => $route,
             'fields' => [
                 'route' => ['type' => 'hidden', 'default' => $route], 'parent_id' => ['type' => 'hidden', 'default' => $this->replyTarget($route)['id'] ?? ''],
                 'name' => ['type' => 'text', 'label' => 'Nome', 'outerclasses' => (string) ($fieldClasses['name'] ?? ''), 'autocomplete' => 'name', 'validate' => ['required' => true, 'max' => 120]],

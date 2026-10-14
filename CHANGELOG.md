@@ -1,3 +1,9 @@
+# 0.4.4
+## 2026-10-14
+
+- Do not enable Grav Form's session keep-alive for comment forms; this avoids
+  loading its jQuery-dependent bundle on themes that do not use jQuery.
+
 # 0.4.3
 ## 2026-10-09
 
