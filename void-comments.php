@@ -52,10 +52,8 @@ final class VoidCommentsPlugin extends Plugin
 
     public function onApiSidebarItems(Event $event): void
     {
-        $user = $event['user'] ?? null;
-        if (!$user || !(bool) $user->get('access.api.super')) return;
         $items = $event['items'] ?? [];
-        $items[] = ['id' => 'void-comments', 'plugin' => 'void-comments', 'label' => 'Commenti', 'icon' => 'fa-comments', 'route' => '/plugin/void-comments', 'priority' => 80, 'badgeEndpoint' => null];
+        $items[] = ['id' => 'void-comments', 'plugin' => 'void-comments', 'label' => 'Commenti', 'icon' => 'fa-comments', 'route' => '/plugin/void-comments', 'priority' => 80, 'authorize' => 'api.super', 'badgeEndpoint' => null];
         $event['items'] = $items;
     }
 

@@ -34,7 +34,9 @@
     "scripts": {
         "test": [
             "@php tests/run.php",
-            "@php tests/storage.php"
-        ]
+            "@php tests/storage.php",
+            "@php tests/sidebar.php"
+        ],
+        "test:grav": "@php tests/clean-grav.php"
     }
 }

@@ -24,6 +24,16 @@ composer install
 composer test
 ```
 
+With a Grav 2 installation that includes the API plugin, run the integration
+check against its real permission resolver:
+
+```sh
+composer test:grav -- /path/to/grav
+```
+
+The check covers direct and group-based super grants, explicit denials and
+limited API-key scopes without creating accounts or runtime data.
+
 ## Runtime dependencies
 
 - Grav 2;
@@ -48,7 +58,8 @@ moderation data and must remain outside version control and public releases.
 
 ## Administration
 
-Users with the Grav `api.super` permission can open the Commenti panel from the
+Users with the Grav `api.super` permission, granted directly or through an enabled
+group, can open the Commenti panel from the
 Grav administration sidebar. The panel supports searching comments, filtering
 by page, pagination, editing, moderation and deletion. Approved comments also
 include a link to their public page.

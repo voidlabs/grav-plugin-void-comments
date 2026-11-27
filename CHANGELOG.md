@@ -1,3 +1,11 @@
+# 0.4.5
+## 2026-11-27
+
+- Delegate sidebar visibility to the API authorize filter, honoring group-based
+  api.super grants, explicit denials and API-key scopes.
+- Keep moderation endpoint authorization and the storage contract unchanged.
+- Add a standalone sidebar registration regression check.
+
 # 0.4.4
 ## 2026-10-14
 
